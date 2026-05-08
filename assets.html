@@ -178,6 +178,12 @@ async function loadAssets() {
                 Delete
             </button>
 
+            
+            <button onclick="editAsset(this)">
+                Edit
+            </button>
+
+
         </div>
     `;
 });
@@ -216,6 +222,23 @@ function deleteAsset(id, fileName, button) {
 
     }, 800);
 }
+
+function editAsset(button) {
+
+    const parent = button.parentElement;
+
+    const currentName = parent.querySelector("strong").innerText;
+
+    const newName = prompt("Edit file name:", currentName);
+
+    if (!newName || newName === currentName) return;
+
+    // ✅ Update UI only
+    parent.querySelector("strong").innerText = newName;
+
+    alert("Updated successfully ✅");
+}
+
 
 // ✅ LOAD ON PAGE OPEN
 loadAssets();
