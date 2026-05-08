@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NebulaShare</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fb;
+            margin: 0;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .nav-buttons button {
+            padding: 10px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* MAIN */
+        .container {
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        /* DROP AREA */
+        .drop-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            background: #eef4ff;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        /* FORM */
+        .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .upload-button {
+            margin-top: 15px;
+            width: 100%;
+            padding: 15px;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ✅ NAVBAR -->
+<div class="navbar">
+    <div class="logo">NebulaShare</div>
+
+    <div class="nav-buttons">
+        <button class="upload-btn" onclick="goToUpload()">Upload</button>
+        <button onclick="goToAssets()">Assets</button>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+    <h1>Upload Assets</h1>
+    <p>Upload and manage your cloud-based files and images</p>
+
+    <!-- ✅ DROP AREA -->
+    <div class="drop-area" id="dropArea" onclick="fileInput.click()">
+        <div id="dropText">Drag and drop your file here or click to upload</div>
+        <div id="fileInfo" class="file-info"></div>
+    </div>
+
+    <input type="file" id="fileInput" style="display:none" />
+
+    <!-- FORM -->
+    <div class="form-box">
+        <h3>File Details</h3>
+
+        <label>File Name</label>
+        <input type="text" id="fileName" placeholder="Enter file name..." />
+
+        <button class="upload-button" onclick="uploadFile()">Upload File</button>
+
+        <div id="result"></div>
+    </div>
+
+</div>
+
+<script>
+
+// ✅ NAVIGATION
+function goToAssets() {
+    window.location.href = "assets.html";
+}
+
+function goToUpload() {
+    window.location.href = "index.html";
+}
+
+// ✅ ELEMENTS
+const dropArea = document.getElementById("dropArea");
+const fileInput = document.getElementById("fileInput");
+const fileInfo = document.getElementById("fileInfo");
+const dropText = document.getElementById("dropText");
+
+// ✅ DRAG EFFECT
+dropArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropArea.style.background = "#dbeafe";
+    dropText.innerText = "Release to upload file";
+});
+
+dropArea.addEventListener("dragleave", () => {
+    dropArea.style.background = "#eef4ff";
+    dropText.innerText = "Drag and drop your file here or click to upload";
+});
+
+// ✅ DROP FILE
+dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.style.background = "#eef4ff";
+    dropText.innerText = "Drag and drop your file here or click to upload";
+
+    const files = e.dataTransfer.files;
+
+    if (files.length > 0) {
+        fileInput.files = files;
+        showFile(files[0]);
+    }
+});
+
+// ✅ FILE SELECT VIA CLICK
+fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 0) {
+        showFile(fileInput.files[0]);
+    }
+});
+
+// ✅ DISPLAY FILE + AUTO FILL NAME
+function showFile(file) {
+    fileInfo.innerText = "Selected: " + file.name;
+
+    // ✅ Auto-fill filename if empty
+    const fileNameInput = document.getElementById("fileName");
+    if (!fileNameInput.value) {
+        fileNameInput.value = file.name;
+    }
+}
+
+// ✅ UPLOAD FUNCTION
+async function uploadFile() {
+    let file = fileInput.files[0];
+    let fileName = document.getElementById("fileName").value;
+
+    if (!file || !fileName) {
+        document.getElementById("result").innerHTML =
+            "<p class='error'>Please select file and name</p>";
+        return;
+    }
+
+    let reader = new FileReader();
+
+    reader.onload = async function () {
+        let base64 = reader.result.split(',')[1];
+
+        let data = {
+            fileName: fileName,
+            mediaType: file.type,
+            content: base64
+        };
+
+        try {
+            let response = await fetch("https://prod-09.swedencentral.logic.azure.com:443/workflows/9565ce522e274efe9351726f6814b77c/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=Y5AK0P0zgSFA4PhIswm8QwCRmE9iirH68gwRd3grvoc", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            let result = await response.json();
+
+            if (response.status === 201) {
+                document.getElementById("result").innerHTML =
+                    "<p class='success'>Upload successful ✅</p>";
+
+                // ✅ redirect after upload
+                setTimeout(() => {
+                    window.location.href = "assets.html";
+                }, 1500);
+
+            } else {
+                document.getElementById("result").innerHTML =
+                    "<p class='error'>" + JSON.stringify(result) + "</p>";
+            }
+
+        } catch {
+            document.getElementById("result").innerHTML =
+                "<p class='error'>Error uploading file</p>";
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+
+</script>
+
+</body>
+</html>

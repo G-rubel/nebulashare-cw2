@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NebulaShare - Assets</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            background: #f5f7fb;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .nav-buttons button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .container {
+            padding: 40px;
+        }
+
+        .card {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            border-radius: 15px;
+            background: white;
+        }
+
+        .asset-item {
+            background: #eef4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .delete-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .main-btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            background: black;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ✅ NAVBAR -->
+<div class="navbar">
+    <div class="logo">NebulaShare</div>
+
+    <div class="nav-buttons">
+        <button onclick="goToUpload()">Upload</button>
+        <button class="active">Assets</button>
+    </div>
+</div>
+
+<!-- ✅ CONTENT -->
+<div class="container">
+    <h1>My Assets</h1>
+    <p id="fileCount">Loading...</p>
+
+    <div id="assetContent" class="card">
+        Loading assets...
+    </div>
+</div>
+
+<script>
+
+// ✅ 🔴 UPDATE THESE
+const GET_API = "https://prod-26.swedencentral.logic.azure.com:443/workflows/c269601b60f24f4899aaf643950940b1/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=41ZAMk51tpr03fQWf1LmdIZNjOzXq2Qwx2TgaeR3ZJI";
+const DELETE_API = "https://prod-23.swedencentral.logic.azure.com:443/workflows/ce6ad247b6d94590ae4fe918fd0abb1e/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=ecpJB9hxBa4j9-lGnrSuyGLA8DjFj3C7bFqAdjdwT9w";
+
+// ✅ NAVIGATION
+function goToUpload() {
+    window.location.href = "index.html";
+}
+
+// ✅ LOAD ASSETS
+async function loadAssets() {
+    try {
+        const res = await fetch(GET_API);
+        const data = await res.json();
+
+        const container = document.getElementById("assetContent");
+        const countText = document.getElementById("fileCount");
+
+        if (!data || data.length === 0) {
+            countText.innerText = "0 files in your cloud storage";
+            container.innerHTML = `
+                <h2>No assets yet</h2>
+                <p>Start uploading files to see them here.</p>
+                <button class="main-btn" onclick="goToUpload()">Upload Your First File</button>
+            `;
+            return;
+        }
+
+        countText.innerText = data.length + " files in your cloud storage";
+
+        let html = "";
+
+        data.forEach(item => {
+            html += `
+                <div class="asset-item">
+                    <strong>${item.fileName}</strong><br/>
+                    Type: ${item.mediaType}<br/>
+                    Uploaded: ${item.uploadedAt || "N/A"}<br/>
+                    Process: ${item.processingResult || "N/A"}<br/>
+
+                    <button class="delete-btn" onclick="deleteAsset('${item.id}', this)">
+                        Delete
+                    </button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch (err) {
+        document.getElementById("assetContent").innerHTML =
+            "<p style='color:red'>Error loading assets ❌</p>";
+    }
+}
+
+// ✅ ✅ IMPROVED DELETE UX
+async function deleteAsset(id, button) {
+
+    // ✅ Confirm first
+    const confirmDelete = confirm("Are you sure you want to delete this file?");
+    if (!confirmDelete) return;
+
+    try {
+        // ✅ Loading state
+        button.innerText = "Deleting...";
+        button.disabled = true;
+
+        const response = await fetch(DELETE_API + "&id=" + id, {
+            method: "DELETE"
+        });
+
+        if (response.ok) {
+
+            // ✅ Remove visually (fast UX)
+            button.parentElement.remove();
+
+            alert("Deleted successfully ✅");
+
+            // ✅ Update count
+            loadAssets();
+
+        } else {
+            alert("Delete failed ❌");
+            button.innerText = "Delete";
+            button.disabled = false;
+        }
+
+    } catch (err) {
+        alert("Error deleting ❌");
+        button.innerText = "Delete";
+        button.disabled = false;
+    }
+}
+
+// ✅ LOAD ON PAGE OPEN
+loadAssets();
+
+</script>
+
+</body>
+</html>
