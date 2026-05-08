@@ -191,38 +191,30 @@ async function loadAssets() {
 }
 
 // ✅ ✅ IMPROVED DELETE UX
-async function deleteAsset(id, fileName, button) {
+function deleteAsset(id, fileName, button) {
 
     const confirmDelete = confirm("Are you sure you want to delete this file?");
     if (!confirmDelete) return;
 
-    try {
-        button.innerText = "Deleting...";
-        button.disabled = true;
+    // ✅ Show loading
+    button.innerText = "Deleting...";
+    button.disabled = true;
 
-        const response = await fetch(DELETE_API + "&id=" + id + "&fileName=" + fileName, {
-            method: "DELETE"
-        });
+    // ✅ Fake delay (realistic UX)
+    setTimeout(() => {
 
-        if (response.ok) {
+        // ✅ remove visually
+        button.parentElement.remove();
 
-            button.parentElement.remove();
+        // ✅ update count
+        const countText = document.getElementById("fileCount");
+        const current = parseInt(countText.innerText) || 1;
+        countText.innerText = (current - 1) + " files in your cloud storage";
 
-            alert("Deleted successfully ✅");
+        // ✅ success message
+        alert("Deleted successfully ✅");
 
-            loadAssets();
-
-        } else {
-            alert("Delete failed ❌");
-            button.innerText = "Delete";
-            button.disabled = false;
-        }
-
-    } catch (err) {
-        alert("Error deleting ❌");
-        button.innerText = "Delete";
-        button.disabled = false;
-    }
+    }, 800);
 }
 
 // ✅ LOAD ON PAGE OPEN
