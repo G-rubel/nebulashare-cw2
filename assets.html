@@ -134,20 +134,53 @@ async function loadAssets() {
 
         let html = "";
 
-        data.forEach(item => {
-            html += `
-                <div class="asset-item">
-                    <strong>${item.fileName}</strong><br/>
-                    Type: ${item.mediaType}<br/>
-                    Uploaded: ${item.uploadedAt || "N/A"}<br/>
-                    Process: ${item.processingResult || "N/A"}<br/>
+       data.forEach(item => {
 
-                    <button class="delete-btn" onclick="deleteAsset('${item.id}', this)">
-                        Delete
-                    </button>
-                </div>
-            `;
-        });
+    const url = `https://nebulasharestorage.blob.core.windows.net/media/${item.fileName}`;
+
+    let preview = "";
+
+    // ✅ IMAGE PREVIEW
+    if (item.mediaType && item.mediaType.startsWith("image")) {
+        preview = `<img src="${url}" width="200" style="border-radius:8px; margin-top:10px;">`;
+    }
+
+    // ✅ VIDEO PREVIEW
+    else if (item.mediaType && item.mediaType.startsWith("video")) {
+        preview = `
+            <video width="200" controls style="margin-top:10px;">
+                <source src="${url}">
+            </video>
+        `;
+    }
+
+    // ✅ OTHER FILES (PDF, etc.)
+    else {
+        preview = `<a href="${url}" target="_blank">Open File</a>`;
+    }
+
+    html += `
+        <div class="asset-item">
+
+            <strong>${item.fileName}</strong><br/>
+            Type: ${item.mediaType}<br/>
+            Uploaded: ${item.uploadedAt || "N/A"}<br/>
+            Process: ${item.processingResult || "N/A"}<br/>
+
+            ${preview}
+
+            <br/>
+            <a href="${url}" target="_blank">View Full File</a>
+
+            <br/><br/>
+
+            <button class="delete-btn" onclick="deleteAsset('${item.id}', this)">
+                Delete
+            </button>
+
+        </div>
+    `;
+});
 
         container.innerHTML = html;
 
