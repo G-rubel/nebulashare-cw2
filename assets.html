@@ -174,7 +174,7 @@ async function loadAssets() {
 
             <br/><br/>
 
-            <button class="delete-btn" onclick="deleteAsset('${item.id}', this)">
+            <button class="delete-btn" onclick="deleteAsset('${item.id}', '${item.fileName}', this)">
                 Delete
             </button>
 
@@ -191,29 +191,25 @@ async function loadAssets() {
 }
 
 // ✅ ✅ IMPROVED DELETE UX
-async function deleteAsset(id, button) {
+async function deleteAsset(id, fileName, button) {
 
-    // ✅ Confirm first
     const confirmDelete = confirm("Are you sure you want to delete this file?");
     if (!confirmDelete) return;
 
     try {
-        // ✅ Loading state
         button.innerText = "Deleting...";
         button.disabled = true;
 
-        const response = await fetch(DELETE_API + "&id=" + id, {
+        const response = await fetch(DELETE_API + "&id=" + id + "&fileName=" + fileName, {
             method: "DELETE"
         });
 
         if (response.ok) {
 
-            // ✅ Remove visually (fast UX)
             button.parentElement.remove();
 
             alert("Deleted successfully ✅");
 
-            // ✅ Update count
             loadAssets();
 
         } else {
